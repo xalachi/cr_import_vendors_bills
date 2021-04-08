@@ -3,9 +3,9 @@
     "name": "CR Import Vendor Bills",
     "version": "12.0.1.0.1",
     "category": "Vendor Bills",
-    "author": "CR FACTURA",
+    "author": "Big Cloud Inc",
     "license": "AGPL-3",
-    "website": "http://www.crfactura.com/",
+    "website": "http://www.odoomatic.com/",
     "summary": "Import Vendor Bills from incoming mail server",
     "description": """
 
