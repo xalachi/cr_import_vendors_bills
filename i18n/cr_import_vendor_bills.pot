@@ -87,8 +87,8 @@ msgid "Customer response"
 msgstr ""
 
 #. module: cr_import_vendor_bills
-#: model:ir.model.fields,field_description:cr_import_vendor_bills.field_account_invoice__company_activity_id
-#: model:ir.model.fields,field_description:cr_import_vendor_bills.field_cr_multiple_invoice_validation__company_activity_id
+#: model:ir.model.fields,field_description:cr_import_vendor_bills.field_account_invoice__activity_id
+#: model:ir.model.fields,field_description:cr_import_vendor_bills.field_cr_multiple_invoice_validation__activity_id
 msgid "Default economic activity"
 msgstr ""
 

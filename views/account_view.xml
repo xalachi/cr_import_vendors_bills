@@ -7,7 +7,7 @@
             <field name="arch" type="xml">
                 <xpath expr="(//field[@name='vendor_bill_id'])" position="after">
                     <field name="iva_condition"/>
-                    <field name="company_activity_id"  domain="[('active', '=', True)]" options='{"no_open": True, "no_create": True}' />
+                    <field name="activity_id"  domain="[('active', '=', True)]" options='{"no_open": True, "no_create": True}' />
                 </xpath>
                 <xpath expr="(//field[@name='user_id'])" position="after">
                     <field name="from_mail"/>
