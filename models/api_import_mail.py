@@ -228,90 +228,90 @@ def load_xml_data_from_mail(invoice, load_lines, account_id, product_id=False, a
         _logger.debug("FECR - load_lines: {} - account: {}".format(load_lines, account_id))
 
         product = False
-        if product_id:
-            product = product_id.id
+        # if product_id:
+        #     product = product_id.id
 
         analytic_account = False
         if analytic_account_id:
             analytic_account = analytic_account_id.id
 
-        if load_lines and not invoice.invoice_line_ids:
-            if load_lines:
-                lines = invoice_xml.xpath("inv:DetalleServicio/inv:LineaDetalle", namespaces=namespaces)
-                new_lines = invoice.env["account.invoice.line"]
-                for line in lines:
-                    product_uom = (
-                        invoice.env["uom.uom"]
-                        .search(
-                            [("code", "=", line.xpath("inv:UnidadMedida", namespaces=namespaces)[0].text)],
+        # if load_lines and not invoice.invoice_line_ids:
+        if load_lines:
+            lines = invoice_xml.xpath("inv:DetalleServicio/inv:LineaDetalle", namespaces=namespaces)
+            new_lines = invoice.env["account.invoice.line"]
+            for line in lines:
+                product_uom = (
+                    invoice.env["uom.uom"]
+                    .search(
+                        [("code", "=", line.xpath("inv:UnidadMedida", namespaces=namespaces)[0].text)],
+                        limit=1,
+                    )
+                    .id
+                )
+                total_amount = float(line.xpath("inv:MontoTotal", namespaces=namespaces)[0].text)
+
+                discount_percentage = 0.0
+                discount_note = None
+
+                if total_amount > 0:
+                    discount_node = line.xpath("inv:Descuento", namespaces=namespaces)
+                    if discount_node:
+                        discount_amount_node = discount_node[0].xpath(
+                            "inv:MontoDescuento", namespaces=namespaces
+                        )[0]
+                        discount_amount = float(discount_amount_node.text or "0.0")
+                        discount_percentage = discount_amount / total_amount * 100
+                        discount_note = (
+                            discount_node[0]
+                            .xpath("inv:NaturalezaDescuento", namespaces=namespaces)[0]
+                            .text
+                        )
+                    else:
+                        discount_amount_node = line.xpath("inv:MontoDescuento", namespaces=namespaces)
+                        if discount_amount_node:
+                            discount_amount = float(discount_amount_node[0].text or "0.0")
+                            discount_percentage = discount_amount / total_amount * 100
+                            discount_note = line.xpath(
+                                "inv:NaturalezaDescuento", namespaces=namespaces
+                            )[0].text
+
+                total_tax = 0.0
+                taxes = []
+                tax_nodes = line.xpath("inv:Impuesto", namespaces=namespaces)
+                for tax_node in tax_nodes:
+                    tax_code = re.sub(r"[^0-9]+", "", tax_node.xpath("inv:Codigo", namespaces=namespaces)[0].text)
+                    tax_code_tarifa = re.sub(r"[^0-9]+", "", tax_node.xpath("inv:CodigoTarifa", namespaces=namespaces)[0].text)
+                    tax_amount = float(tax_node.xpath("inv:Tarifa", namespaces=namespaces)[0].text)
+                    _logger.debug("FECR - tax_code: %s", tax_code)
+                    _logger.debug("FECR - tax_amount: %s", tax_amount)
+
+                    # if product_id and product_id.non_tax_deductible:
+                    #     tax = invoice.env["account.tax"].search(
+                    #         [
+                    #             ("tax_code", "=", tax_code),
+                    #             ("amount", "=", tax_amount),
+                    #             ("type_tax_use", "=", "purchase"),
+                    #             ("non_tax_deductible", "=", True),
+                    #             ("active", "=", True),
+                    #         ],
+                    #         limit=1,
+                    #     )
+                    # else:
+                    if tax_code and tax_code_tarifa and tax_amount:
+                        tax = invoice.env["account.tax"].search(
+                            [
+                                ("tax_code", "=", tax_code),
+                                ("iva_tax_code", "=", tax_code_tarifa),
+                                #("amount", "=", tax_amount),
+                                ("type_tax_use", "=", "purchase"),
+                                #("non_tax_deductible", "=", False),
+                                ("active", "=", True),
+                            ],
                             limit=1,
                         )
-                        .id
-                    )
-                    total_amount = float(line.xpath("inv:MontoTotal", namespaces=namespaces)[0].text)
-
-                    discount_percentage = 0.0
-                    discount_note = None
-
-                    if total_amount > 0:
-                        discount_node = line.xpath("inv:Descuento", namespaces=namespaces)
-                        if discount_node:
-                            discount_amount_node = discount_node[0].xpath(
-                                "inv:MontoDescuento", namespaces=namespaces
-                            )[0]
-                            discount_amount = float(discount_amount_node.text or "0.0")
-                            discount_percentage = discount_amount / total_amount * 100
-                            discount_note = (
-                                discount_node[0]
-                                .xpath("inv:NaturalezaDescuento", namespaces=namespaces)[0]
-                                .text
-                            )
-                        else:
-                            discount_amount_node = line.xpath("inv:MontoDescuento", namespaces=namespaces)
-                            if discount_amount_node:
-                                discount_amount = float(discount_amount_node[0].text or "0.0")
-                                discount_percentage = discount_amount / total_amount * 100
-                                discount_note = line.xpath(
-                                    "inv:NaturalezaDescuento", namespaces=namespaces
-                                )[0].text
-
-                    total_tax = 0.0
-                    taxes = []
-                    tax_nodes = line.xpath("inv:Impuesto", namespaces=namespaces)
-                    for tax_node in tax_nodes:
-                        tax_code = re.sub(
-                            r"[^0-9]+", "", tax_node.xpath("inv:Codigo", namespaces=namespaces)[0].text
-                        )
-                        tax_amount = float(tax_node.xpath("inv:Tarifa", namespaces=namespaces)[0].text)
-                        _logger.debug("FECR - tax_code: %s", tax_code)
-                        _logger.debug("FECR - tax_amount: %s", tax_amount)
-
-                        if product_id and product_id.non_tax_deductible:
-                            tax = invoice.env["account.tax"].search(
-                                [
-                                    ("tax_code", "=", tax_code),
-                                    ("amount", "=", tax_amount),
-                                    ("type_tax_use", "=", "purchase"),
-                                    ("non_tax_deductible", "=", True),
-                                    ("active", "=", True),
-                                ],
-                                limit=1,
-                            )
-                        else:
-                            tax = invoice.env["account.tax"].search(
-                                [
-                                    ("tax_code", "=", tax_code),
-                                    ("amount", "=", tax_amount),
-                                    ("type_tax_use", "=", "purchase"),
-                                    ("non_tax_deductible", "=", False),
-                                    ("active", "=", True),
-                                ],
-                                limit=1,
-                            )
 
                         if tax:
                             total_tax += float(tax_node.xpath("inv:Monto", namespaces=namespaces)[0].text)
-
                             exonerations = tax_node.xpath("inv:Exoneracion", namespaces=namespaces)
                             if exonerations:
                                 for exoneration_node in exonerations:
@@ -333,62 +333,62 @@ def load_xml_data_from_mail(invoice, load_lines, account_id, product_id=False, a
                                     taxes.append((4, tax.id))
                             else:
                                 taxes.append((4, tax.id))
-                        else:
-                            if product_id and product_id.non_tax_deductible:
-                                invoice.message_post(
-                                    body="Tax code %s and percentage %s as non-tax deductible is not registered in the system"
-                                    % (tax_code, tax_amount)
-                                )
-                                _logger.info(
-                                    "Tax code %s and percentage %s as non-tax deductible is not registered in the system"
-                                    % (tax_code, tax_amount)
-                                )
-                            else:
-                                _logger.info(
-                                    "Tax code %s and percentage %s is not registered in the system"
-                                    % (tax_code, tax_amount)
-                                )
-                                invoice.message_post(
-                                    body="Tax code %s and percentage %s is not registered in the system"
-                                    % (tax_code, tax_amount)
-                                )
+                    # else:
+                    #     if product_id and product_id.non_tax_deductible:
+                    #         invoice.message_post(
+                    #             body="Tax code %s and percentage %s as non-tax deductible is not registered in the system"
+                    #             % (tax_code, tax_amount)
+                    #         )
+                    #         _logger.info(
+                    #             "Tax code %s and percentage %s as non-tax deductible is not registered in the system"
+                    #             % (tax_code, tax_amount)
+                    #         )
+                    #     else:
+                    #         _logger.info(
+                    #             "Tax code %s and percentage %s is not registered in the system"
+                    #             % (tax_code, tax_amount)
+                    #         )
+                    #         invoice.message_post(
+                    #             body="Tax code %s and percentage %s is not registered in the system"
+                    #             % (tax_code, tax_amount)
+                    #         )
 
-                    _logger.debug("FECR - line taxes: %s" % (taxes))
-                    invoice_line = invoice.env["account.invoice.line"].create(
-                        {
-                            "name": line.xpath("inv:Detalle", namespaces=namespaces)[0].text,
-                            "invoice_id": invoice.id,
-                            "price_unit": line.xpath("inv:PrecioUnitario", namespaces=namespaces)[0].text,
-                            "quantity": line.xpath("inv:Cantidad", namespaces=namespaces)[0].text,
-                            "uom_id": product_uom,
-                            "sequence": line.xpath("inv:NumeroLinea", namespaces=namespaces)[0].text,
-                            "discount": discount_percentage,
-                            "discount_note": discount_note,
-                            # 'total_amount': total_amount,
-                            "product_id": product,
-                            "account_id": account_id.id or False,
-                            "account_analytic_id": analytic_account,
-                            "amount_untaxed": float(
-                                line.xpath("inv:SubTotal", namespaces=namespaces)[0].text
-                            ),
-                            "total_tax": total_tax,
-                            "economic_activity_id": invoice.economic_activity_id.id,
-                        }
-                    )
+                _logger.debug("FECR - line taxes: %s" % (taxes))
+                invoice_line = invoice.env["account.invoice.line"].create(
+                    {
+                        "name": line.xpath("inv:Detalle", namespaces=namespaces)[0].text,
+                        "invoice_id": invoice.id,
+                        "price_unit": line.xpath("inv:PrecioUnitario", namespaces=namespaces)[0].text,
+                        "quantity": line.xpath("inv:Cantidad", namespaces=namespaces)[0].text,
+                        "uom_id": product_uom,
+                        "sequence": line.xpath("inv:NumeroLinea", namespaces=namespaces)[0].text,
+                        "discount": discount_percentage,
+                        "discount_note": discount_note,
+                        # 'total_amount': total_amount,
+                        "product_id": product,
+                        "account_id": account_id.id or False,
+                        "account_analytic_id": analytic_account,
+                        "amount_untaxed": float(
+                            line.xpath("inv:SubTotal", namespaces=namespaces)[0].text
+                        ),
+                        "total_tax": total_tax,
+                        "economic_activity_id": invoice.economic_activity_id.id,
+                    }
+                )
 
-                    # This must be assigned after line is created
-                    invoice_line.invoice_line_tax_ids = taxes
-                    invoice_line.economic_activity_id = activity
-                    new_lines += invoice_line
+                # This must be assigned after line is created
+                invoice_line.invoice_line_tax_ids = taxes
+                invoice_line.economic_activity_id = activity
+                new_lines += invoice_line
 
-                invoice.invoice_line_ids = new_lines
+            invoice.invoice_line_ids = new_lines
 
         invoice.amount_total_electronic_invoice = invoice_xml.xpath(
             "inv:ResumenFactura/inv:TotalComprobante", namespaces=namespaces
         )[0].text
 
-        tax_node = invoice_xml.xpath("inv:ResumenFactura/inv:TotalImpuesto", namespaces=namespaces)
+        tax_node = invoice_xml.xpath("inv:ResumenFactura/inv:TotalImpuesto", namespaces=namespaces)[0].text
         if tax_node:
-            invoice.amount_tax_electronic_invoice = tax_node[0].text
+            invoice.amount_tax_electronic_invoice = tax_node
 
         invoice.compute_taxes()

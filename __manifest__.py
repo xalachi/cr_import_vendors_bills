@@ -1,12 +1,12 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
-    "name": "CR Import Vendor Bills",
-    "version": "12.0.1.0.1",
+    "name": "Importar facturas de proveedores desde un correo-e",
+    "version": "12.0.1.0.3",
     "category": "Vendor Bills",
-    "author": "Big Cloud Inc",
+    "author": "JHONNY MERINO SAMILLÁN",
     "license": "AGPL-3",
-    "website": "http://www.odoomatic.com/",
-    "summary": "Import Vendor Bills from incoming mail server",
+    "website": "http://www.crfactura.com/",
+    "summary": "Ninguno",
     "description": """
 
     """,
