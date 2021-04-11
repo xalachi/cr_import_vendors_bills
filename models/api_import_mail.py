@@ -232,8 +232,8 @@ def load_xml_data_from_mail(invoice, load_lines, account_id, product_id=False, a
         #     product = product_id.id
 
         analytic_account = False
-        if analytic_account_id:
-            analytic_account = analytic_account_id.id
+        #if analytic_account_id:
+        #    analytic_account = analytic_account_id.id
 
         # if load_lines and not invoice.invoice_line_ids:
         if load_lines:
@@ -298,17 +298,14 @@ def load_xml_data_from_mail(invoice, load_lines, account_id, product_id=False, a
                     #     )
                     # else:
                     if tax_code and tax_code_tarifa and tax_amount:
-                        tax = invoice.env["account.tax"].search(
-                            [
-                                ("tax_code", "=", tax_code),
-                                ("iva_tax_code", "=", tax_code_tarifa),
-                                #("amount", "=", tax_amount),
-                                ("type_tax_use", "=", "purchase"),
-                                #("non_tax_deductible", "=", False),
-                                ("active", "=", True),
-                            ],
-                            limit=1,
-                        )
+                        if invoice.company_id.id!=False:
+                            domain =  [("tax_code", "=", tax_code),("iva_tax_code", "=", tax_code_tarifa),
+                                       ("type_tax_use", "=", "purchase"),("active", "=", True),
+                                       ('company_id','=',invoice.company_id.id)]
+                        else:
+                            domain = [("tax_code", "=", tax_code), ("iva_tax_code", "=", tax_code_tarifa),
+                                      ("type_tax_use", "=", "purchase"), ("active", "=", True)]
+                        tax = invoice.env["account.tax"].search(domain,limit=1)
 
                         if tax:
                             total_tax += float(tax_node.xpath("inv:Monto", namespaces=namespaces)[0].text)

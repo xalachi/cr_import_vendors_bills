@@ -2,13 +2,13 @@
 {
     "name": "Importar facturas de proveedores desde un correo-e",
     "version": "12.0.1.0.3",
-    "category": "Vendor Bills",
-    "author": "JHONNY MERINO SAMILLÁN",
+    "category": "Facturas de proveedor",
+    "author": "JHONNY MERINO SAMILLÁN, CHICLAYO - PERÚ",
     "license": "AGPL-3",
     "website": "http://www.crfactura.com/",
     "summary": "Ninguno",
     "description": """
-
+        Éste es un módulo modificado
     """,
     # any module necessary for this one to work correctly
     "depends": ["fecr"],
