@@ -5,7 +5,7 @@
     "category": "Facturas de proveedor",
     "author": "JHONNY MERINO SAMILLÁN, CHICLAYO - PERÚ",
     "license": "AGPL-3",
-    "website": "http://www.crfactura.com/",
+    "website": "http://www.odoomatic.com/",
     "summary": "Ninguno",
     "description": """
         Éste es un módulo modificado
