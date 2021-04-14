@@ -89,6 +89,7 @@ def load_xml_data_from_mail(invoice, load_lines, account_id, product_id=False, a
         invoice.unlink()
         message = "Receptor no corresponde a la compañia " + receptor + ". Please check the email in the inbox."
         print(message)
+        return False
         # raise UserError(
         #     "The receptor in the XML does not correspond to the current company "
         #     + receptor
@@ -389,3 +390,5 @@ def load_xml_data_from_mail(invoice, load_lines, account_id, product_id=False, a
             invoice.amount_tax_electronic_invoice = tax_node
 
         invoice.compute_taxes()
+
+        return True

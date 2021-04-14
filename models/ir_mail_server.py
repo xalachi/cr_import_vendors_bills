@@ -246,7 +246,7 @@ class FetchmailServer(models.Model):
                     invoice.write({'company_id': company_id.id})
                     invoice.fname_xml_supplier_approval = attach.fname
                     invoice.xml_supplier_approval = base64.encodestring(attach.content)
-                    api_import_mail.load_xml_data_from_mail(
+                    r = api_import_mail.load_xml_data_from_mail(
                         invoice,
                         True,
                         company_id.import_bill_account_id,
@@ -254,34 +254,38 @@ class FetchmailServer(models.Model):
                         company_id.import_bill_account_analytic_id,
                     )
 
-                    if invoice:
-                        attachment_id = self.create_ir_attachment_invoice(
-                            invoice, attach, "application/xml"
-                        )
-                        list_attachment = [attachment_id.id]
-                        # Searching PDF
-                        for attach in msg.get("attachments"):
-                            file_name = attach.fname or "item.ignore"
-                            if pathlib.Path(file_name.upper()).suffix == ".XML":
-                                attachencode = base64.encodestring(attach.content)
-                                invoice_xml = etree.fromstring(base64.b64decode(attachencode))
-                                if re.search("MensajeHacienda", invoice_xml.tag):
+                    if r:
+
+                        if invoice:
+                            attachment_id = self.create_ir_attachment_invoice(
+                                invoice, attach, "application/xml"
+                            )
+                            list_attachment = [attachment_id.id]
+                            # Searching PDF
+                            for attach in msg.get("attachments"):
+                                file_name = attach.fname or "item.ignore"
+                                if pathlib.Path(file_name.upper()).suffix == ".XML":
+                                    attachencode = base64.encodestring(attach.content)
+                                    invoice_xml = etree.fromstring(base64.b64decode(attachencode))
+                                    if re.search("MensajeHacienda", invoice_xml.tag):
+                                        list_attachment.append(
+                                            self.create_ir_attachment_invoice(
+                                                invoice, attach, "application/xml"
+                                            ).id
+                                        )
+                                if pathlib.Path(file_name.upper()).suffix == ".PDF":
                                     list_attachment.append(
                                         self.create_ir_attachment_invoice(
-                                            invoice, attach, "application/xml"
+                                            invoice, attach, "application/pdf"
                                         ).id
                                     )
-                            if pathlib.Path(file_name.upper()).suffix == ".PDF":
-                                list_attachment.append(
-                                    self.create_ir_attachment_invoice(
-                                        invoice, attach, "application/pdf"
-                                    ).id
-                                )
 
-                        invoice.message_post(attachment_ids=list_attachment)
-                        return invoice
+                            invoice.message_post(attachment_ids=list_attachment)
+                            return invoice
+                        else:
+                            False
                     else:
-                        False
+                        return False
 
                 except Exception as e:
                     _logger.info("This XML file is not XML-compliant. Error: %s", e)
