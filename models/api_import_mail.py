@@ -110,9 +110,7 @@ def load_xml_data_from_mail(invoice, load_lines, account_id, product_id=False, a
             [
                 ("vat", "=", emisor),
                 ("supplier", "=", True),
-                "|",
-                ("company_id", "=", invoice.company_id.id),
-                ("company_id", "=", False),
+                ("company_id", "=", invoice.company_id.id)
             ],
             limit=1,
         )
